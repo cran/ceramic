@@ -50,7 +50,7 @@ clear_ceramic_cache <- function(clobber = FALSE, ...){
 down_loader <- function(x, query_string, clobber = FALSE, ..., debug = FALSE, verbose = TRUE) {
   if (verbose) {
     provider <- strsplit(query_string, '\\{')[[1]][1]
-    print(glue::glue("Preparing to download: {nrow(x$tiles)} tiles at zoom = {x$zoom} from \n {provider}"))
+    message(glue::glue("Preparing to download: {nrow(x$tiles)} tiles at zoom = {x$zoom} from \n {provider}"))
   }
   purrr::pmap(x$tiles,
               function(x, y, zoom){
@@ -59,10 +59,10 @@ down_loader <- function(x, query_string, clobber = FALSE, ..., debug = FALSE, ve
                 outfile <- url_to_cache(api_query)
 
                 if (debug) {
-                  print(outfile)
+                  #print(outfile)
                   return(outfile)
                 }
-                if (!file.exists(outfile) || clobber || fs::file_info(outfile)$size < 101) {
+                if (!file.exists(outfile) || clobber || fs::file_info(outfile)$size < 35) {
                   cachedir <- fs::path_dir(outfile)
 
                   if (!fs::dir_exists(cachedir)) fs::dir_create(cachedir, recurse = TRUE)
@@ -92,6 +92,7 @@ down_loader <- function(x, query_string, clobber = FALSE, ..., debug = FALSE, ve
 #' source and spatial extent.
 #' @export
 #' @importFrom rlang .data
+#' @importFrom stringr str_extract
 #' @examples
 #' if (interactive() && !is.null(get_api_key())) {
 #'  tiles <- ceramic_tiles(zoom = 0)
@@ -103,18 +104,33 @@ ceramic_tiles <- function(zoom = NULL, type = "mapbox.satellite",
   bfiles <-
     fs::dir_ls(ceramic_cache(), recurse = TRUE, type = "file",
                glob = glob, regexp = regexp)
-  #strex <- function(x, y) regmatches(x, regexec(y, x))
-  #browser()
-  ## need BR to fix this ...
-  #toks <- do.call(rbind, strex(bfiles, "([[:digit:]]+)/([[:digit:]]+)/([[:digit:]]+)\\.[^\\.]+$"))
-  bigmess <- lapply(strsplit(bfiles, "/"), function(x) utils::tail(x, 3L))
-  toks1 <- unlist(unname(lapply(bigmess, function(x) x[1])))
-  toks2<- unlist(unname(lapply(bigmess, function(x) x[2])))
-  toks3 <- unlist(unname(lapply(bigmess, function(x)x[3])))
-  toks3 <- unlist(unname(lapply(strsplit(toks3, "\\D"), function(x) x[1])))
 
-  files <- tibble::tibble(tile_x = as.integer(toks2), tile_y = as.integer(toks3),
-                          zoom = as.integer(toks1),
+  tile_index <- strsplit(str_extract(bfiles, "[0-9]+/[0-9]+/[0-9]+"), "/")
+  ok <- lengths(tile_index) == 3L
+  if (sum(ok) < 1) stop("no tile files found")
+  
+  if (!all(ok)) {
+    tile_index <- tile_index[ok]
+    bfiles <- bfiles[ok]
+  }
+  tile_index <- do.call(rbind, tile_index)
+  
+  tile_x <- as.numeric(tile_index[,2L, drop = TRUE])
+  tile_y <- as.numeric(tile_index[,3L, drop = TRUE])
+  zooms <- as.numeric(tile_index[,1L, drop = TRUE])
+  bad <- is.na(tile_x) | is.na(tile_y) | is.na(zoom) 
+  bad <- bad | (tile_x < 0) | (tile_y < 0) | (zoom < 0)
+  bad <- bad | (tile_x > .Machine$integer.max) | (tile_y > .Machine$integer.max) | (zoom >   .Machine$integer.max)
+  if (any(bad)) {
+    if (all(bad)) stop("could not parse tile index for any files from cache")
+    tile_x <- tile_x[!bad]
+    tile_y <- tile_y[!bad]
+    zooms <- zooms[!bad]
+    bfiles <- bfiles[!bad]
+  }
+  files <- tibble::tibble(tile_x = as.integer(tile_x), 
+                          tile_y = as.integer(tile_y), 
+                          zoom = as.integer(zooms), 
                           type = tile_type(bfiles),
                           version = tile_version(bfiles),
                           source = tile_source(bfiles), fullname = bfiles)
@@ -131,7 +147,7 @@ ceramic_tiles <- function(zoom = NULL, type = "mapbox.satellite",
 
   azoom <- zoom
 
-  if (!is.null(zoom)) files <- dplyr::filter(files, .data$zoom %in% azoom)
+ files <- dplyr::filter(files, .data$zoom %in% azoom)
   if (nrow(files) < 1) stop(sprintf("no tiles at 'zoom = %i'", azoom))
   #browser()
 
@@ -149,16 +165,6 @@ tile_type <- function(x) {
   basename(dirname(dirname(dirname(x))))
 }
 
-tile_x <- function(x) {
-  as.integer(basename(dirname(x)))
-}
-tile_y <- function(x) {
-  #xbase <- basename(x)
-  stop("not implemented")
-}
-tile_zoom <- function(x) {
-  as.integer(basename(dirname(dirname(x))))
-}
 
 #' Ceramic file cache
 #'
@@ -182,7 +188,8 @@ tile_zoom <- function(x) {
 #'  ceramic_cache()
 #' }
 ceramic_cache <- function(force = FALSE) {
-  cache <- file.path(rappdirs::user_cache_dir(), ".ceramic")
+  ## normalize else gdal creates ./~/<cache>
+  cache <- file.path( normalizePath(rappdirs::user_cache_dir()), ".ceramic")
   if (!fs::dir_exists(cache)) {
     if (!force) {
       val <- TRUE
@@ -191,16 +198,16 @@ ceramic_cache <- function(force = FALSE) {
     }
     fs::dir_create(cache)
   }
+  gdalwmspath <- file.path(cache, "ceramic.gdalwmscache")
+  curr <- vapour::vapour_get_config("GDAL_DEFAULT_WMS_CACHE_PATH")
+  if (!nzchar(curr)) {
+    fs::dir_create(gdalwmspath)
+    vapour::vapour_set_config("GDAL_DEFAULT_WMS_CACHE_PATH", gdalwmspath)
+  }
   cache
 }
 
-#' @name ceramic_cache
-#' @keywords internal
-#' @export
-slippy_cache <- function(...) {
-  .Deprecated("ceramic_cache")
-  ceramic_cache(...)
-}
+
 url_to_cache <- function(x) {
   base_filepath <- file.path(ceramic_cache(), gsub("^//", "", gsub("^https\\:", "", gsub("^https\\:", "", x))))
   ## chuck off any ? junk

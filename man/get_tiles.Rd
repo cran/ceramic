@@ -2,11 +2,37 @@
 % Please edit documentation in R/get_tiles.R
 \name{get_tiles}
 \alias{get_tiles}
-\title{Download Mapbox imagery tiles}
+\alias{read_tiles}
+\title{Download imagery tiles}
 \usage{
-get_tiles(x, buffer, type = "mapbox.satellite", crop_to_buffer = TRUE,
-  format = NULL, ..., zoom = NULL, debug = FALSE, max_tiles = NULL,
-  base_url = NULL, verbose = TRUE)
+read_tiles(
+  x,
+  buffer,
+  type = "mapbox.satellite",
+  crop_to_buffer = TRUE,
+  format = NULL,
+  ...,
+  zoom = NULL,
+  debug = FALSE,
+  max_tiles = NULL,
+  base_url = NULL,
+  verbose = TRUE,
+  filename = ""
+)
+
+get_tiles(
+  x,
+  buffer,
+  type = "mapbox.satellite",
+  crop_to_buffer = TRUE,
+  format = NULL,
+  ...,
+  zoom = NULL,
+  debug = FALSE,
+  max_tiles = NULL,
+  base_url = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{x}{a longitude, latitude pair of coordinates, or a spatial object}
@@ -23,17 +49,19 @@ get_tiles(x, buffer, type = "mapbox.satellite", crop_to_buffer = TRUE,
 
 \item{zoom}{desired zoom for tiles, use with caution - if \code{NULL} is chosen automatically}
 
-\item{debug}{optionally print out files that will be used}
+\item{debug}{optionally avoid actual download, but print out what would be downloaded in non-debug mode}
 
 \item{max_tiles}{maximum number of tiles - if \code{NULL} is set by zoom constraints}
 
 \item{base_url}{tile provider URL expert use only}
 
 \item{verbose}{report messages or suppress them}
+
+\item{filename}{purely for \code{\link[=read_tiles]{read_tiles()}} this is passed down to the the terra package function 'merge'}
 }
 \value{
 A list with files downloaded in character vector, a data frame of the tile indices,
-the zoom level used and the extent in \link[raster:extent]{raster::extent} form.
+the zoom level used and the extent in xmin,xmax,ymin,ymax form.
 }
 \description{
 Obtain imagery or elevation tiles by location query. The first argument
@@ -50,15 +78,14 @@ There is no maximum on what will be downloaded, but it can be interrupted at any
 
 Use \code{debug = TRUE} to avoid download and simply report on what would be done.
 
-\code{cc_elevation} does extra work to unpack the DEM tiles from the RGB format.
-
 Available types are 'elevation-tiles-prod' for AWS elevation tiles, and 'mapbox.satellite',
-'mapbox.outdoors', 'mapbox.terrain-rgb', 'mapbox.streets', 'mapbox.light', 'mapbox.dark'
-or any other string accepted by Mapbox services.
+'mapbox.terrain-rgb'.  (The RGB terrain values are not unpacked.)
+
+Function \code{read_tiles()} will match what \code{get_tiles()} does and actually build a raster object.
 }
 \examples{
 if (!is.null(get_api_key())) {
-   tile_info <- get_tiles(raster::extent(146, 147, -43, -42), type = "mapbox.outdoors", zoom = 5)
+   tile_info <- get_tiles(ext(146, 147, -43, -42), type = "mapbox.satellite", zoom = 5)
 }
 }
 \seealso{

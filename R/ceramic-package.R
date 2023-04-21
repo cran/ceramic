@@ -1,11 +1,17 @@
+globalVariables("cities", "ceramic", add = TRUE)
+
+
 #' Obtain imagery tiles
 #'
-#' The ceramic package provides tools to download and load imagery and raster tiles from online servers.
+#' The ceramic package provides tools to download  raster tiles from online servers.
 #'
 #' Any process that can trigger downloads will first check the [ceramic_cache()] in case the tile already exists.
 #'
+#' It can also load raster data from online servers to obtain imagery, but we let GDAL manage that. 
+#' 
+#' If you want to deal with the tiles downloaded directly, see [ceramic_tiles()]. 
 #'
-#' The main functions are for downloading tiles and loading them as raster objects, and each accepts a spatial
+#' The main functions are for downloading tiles and each accepts a spatial
 #'   object for the first argument, alternatively a raster extent, or location:
 #'
 #'
@@ -16,7 +22,7 @@
 #'   \code{\link{get_tiles_zoom}}\tab Download tiles base on extent and zoom level \cr
 #'   }
 #'
-#'   Two helper functions will trigger the download of tiles and also collate the result into a raster object:
+#'   Two helper functions will load imagery into a raster object:
 #'
 #'
 #'   \tabular{ll}{
@@ -43,20 +49,25 @@
 #'   \code{\link{mercator_tile_extent}}\tab Abstract raster-extent form of the spherical Mercator tile system, expressed in tile-index and zoom \cr
 #'   \code{\link{plot_tiles}}\tab Plot the tiles from \code{\link{ceramic_tiles}} \cr
 #'   \code{\link{tiles_to_polygon}}\tab Convert \code{\link{ceramic_tiles}} to simple features format \cr
-#'   \code{\link{cc_casey}}\tab Specific location hardcoded form of \code{\link{cc_location}} \cr
-#'   \code{\link{cc_davis}}\tab Specific location hardcoded form of \code{\link{cc_location}} \cr
 #'   \code{\link{cc_heard}}\tab Specific location hardcoded form of \code{\link{cc_location}} \cr
 #'   \code{\link{cc_kingston}}\tab Specific location hardcoded form of \code{\link{cc_location}} \cr
 #'   \code{\link{cc_macquarie}}\tab Specific location hardcoded form of \code{\link{cc_location}} \cr
-#'   \code{\link{cc_mawson}}\tab Specific location hardcoded form of \code{\link{cc_location}} \cr
 #'   }
 #'
 #' @name ceramic-package
 #' @aliases ceramic
+#' @importFrom terra ext rast set.ext set.crs sprc
 #' @docType package
 NULL
 
-
+#' Cities locations
+#' 
+#' Dataset from package {maps}.
+#' 
+#' Data frame with columns "name"        "country.etc" "pop"         "lat"         "long"        "capital". 
+#' @docType data
+#' @name cities
+NULL
 
 #' Deprecated functions from ceramic
 #'

@@ -1,3 +1,52 @@
+
+# ceramic 0.8.0
+
+
+o BREAKING CHANGES
+
+* `base_url` is now ignored by `cc_location()` and family, use `get_tiles()` for custom Mapbox styles. This is part of the decoupling of raster load from tile getting. 
+
+* `tiles_to_polygon()` now returns wk rct vector, not sf. 
+
+* Made functions casey(), mawson(), and davis() defunct, because mapbox doesn't work down there now?  (might update with virtualearth) 
+
+* Functions `cc_location()` and friends now return terra SpatRaster. These functions now ignore arguments 'max_tiles' and 'zoom', but gain  a new argument 'dimension'. If this is not set something resembling the graphics device is used. 
+
+o CHANGES
+
+* Removed magrittr. 
+
+* New function `unpack_rgb()` to calculate elevation from packed Byte Mapbox terrain-rgb. 
+
+* New function `read_tiles()` replaces old use of `cc_location()` to actually read downloaded tiles. 
+
+* ceramic no longer imports from  spex. 
+
+* Objects from {terra}, {stars}, {wk} and {geos} are now supported for using in `cc_location(loc = )`. 
+
+* No custom styles are available now for cc_location, there's only 'mapbox.satellite'. 
+
+* Removed raster handling support. 
+
+* Removed virtual tiles (see hypertidy/grout). 
+
+* Begin move to use GDAL for the read, separate tile downloading from raster input. 
+
+* Fixed `cc_kingston` location. 
+
+* Removed all references to non-supported mapbox styles, we now have 'mapbox.satellite' and and 'mapbox.terrain-rgb'. Others can be used with a custom styles URL from your own mapbox account. 
+
+* Removed unused LazyData in DESCRIPTION. 
+
+* Removed dependency rgdal. 
+
+* Standardized use of longlat and spherical mercator spec. 
+
+* Tweaked behaviour of `debug` argument, thanks to prompt by Grant Williamson. 
+
+* Fix bug in cc_elevation that prevent use of Amazon tiles. 
+
+
 # ceramic 0.6.0
 
 * Removed unused data set. 

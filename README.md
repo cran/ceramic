@@ -1,15 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- badges: start -->
 
-[![lifecycle](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)[![Travis-CI
-Build
-Status](https://travis-ci.org/hypertidy/ceramic.svg?branch=master)](https://travis-ci.org/hypertidy/ceramic)
-[![AppVeyor build
-status](https://ci.appveyor.com/api/projects/status/slut5jxc9lta8pml/branch/master?svg=true)](https://ci.appveyor.com/project/mdsumner/ceramic)
-[![Coverage
-status](https://codecov.io/gh/hypertidy/ceramic/branch/master/graph/badge.svg)](https://codecov.io/github/hypertidy/ceramic?branch=master)
-[![CRAN
-status](https://www.r-pkg.org/badges/version/ceramic)](https://cran.r-project.org/package=ceramic)[![CRAN\_Download\_Badge](http://cranlogs.r-pkg.org/badges/ceramic)](https://cran.r-project.org/package=ceramic)
+[![R-CMD-check](https://github.com/hypertidy/ceramic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hypertidy/ceramic/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
 
 # ceramic
 
@@ -18,27 +12,32 @@ define the region of interest.
 
 ``` r
 library(ceramic)
-roi <- raster::extent(100, 160, -50, 10)
+#> Loading required package: terra
+#> terra 1.7.23
+roi <- ext(100, 160, -50, 10)
 im <- cc_location(roi)
-#> Preparing to download: 16 tiles at zoom = 4 from 
-#> https://api.mapbox.com/v4/mapbox.satellite/
 
-raster::plotRGB(im)
+plotRGB(im)
 ```
 
 <img src="man/figures/README-unnamed-chunk-1-1.png" width="100%" />
 
-We can use raster, sp, or sf objects to define an extent. This provides
-a very easy way to obtain imagery or elevation data for any almost any
-region using our own data.
+The terra package is always loaded by ceramic, so we can assume the use
+of its functions, ceramic accepts a wider range of inputs than terra
+does however.
+
+We can use wk, geos, terra, raster, sp, sf, or stars objects, or an
+input lon,lat point and a buffer (in metres) to define an extent. This
+provides a very easy way to obtain imagery or elevation data for any
+almost any region using our own data.
 
 ``` r
-ne <- rnaturalearth::ne_countries(returnclass = "sf")
-im_nz <- cc_location(subset(ne, name == "New Zealand"), 
-                     type = "mapbox.light")
-#> Preparing to download: 12 tiles at zoom = 6 from 
-#> https://api.mapbox.com/v4/mapbox.light/
-raster::plotRGB(im_nz)
+sql <- "SELECT shapeGroup FROM geoBoundariesCGAZ_ADM0 WHERE shapeGroup IN ('BOL')"
+dsn <- "/vsizip//vsicurl/https://github.com/wmgeolab/geoBoundaries/raw/main/releaseData/CGAZ/geoBoundariesCGAZ_ADM0.zip"
+bol <- vect(dsn, query = sql)
+
+im <- cc_location(bol)
+plotRGB(im)
 ```
 
 <img src="man/figures/README-extent2-1.png" width="100%" />
@@ -46,45 +45,51 @@ raster::plotRGB(im_nz)
 Even if the data uses a map projection it will be converted into a
 region to match the Mercator extents used by Mapbox image servers.
 
-``` r
-data("nz", package = "spData")
-library(sf)
-#> Linking to GEOS 3.7.0, GDAL 2.4.0, PROJ 5.2.0
-im_nz2 <- cc_location(nz)
-#> Preparing to download: 12 tiles at zoom = 6 from 
-#> https://api.mapbox.com/v4/mapbox.satellite/
-raster::plotRGB(im_nz2)
-plot(st_transform(nz, raster::projection(im_nz2)), add = TRUE, col = rainbow(nrow(nz), alpha = 0.5))
-#> Warning in plot.sf(st_transform(nz, raster::projection(im_nz2)), add =
-#> TRUE, : ignoring all but the first attribute
-```
-
-<img src="man/figures/README-nz-spData-1.png" width="100%" />
-
 There are basic heuristics to decide if data is projected or just in
-“longitude,latitude” in the usual raster package way.
+“longitude,latitude” in the usual way.
 
 Raster elevation data is also available.
 
 ``` r
 north <- nz[nz$Island == "North", ]
-dem_nz <- cc_elevation(north)
-#> Preparing to download: 15 tiles at zoom = 7 from 
-#> https://api.mapbox.com/v4/mapbox.terrain-rgb/
+dem_nz <- cc_elevation(north, type = "elevation-tiles-prod" )
 
 
 ## plot elevation data for NZ north
 dem_nz[!dem_nz > 0] <- NA
-raster::plot(dem_nz, col = grey(seq(0, 1, length = 51)), breaks = quantile(raster::values(dem_nz), seq(0, 1, length = 52), na.rm = TRUE), legend = FALSE)
-plot(st_transform(st_cast(north, "MULTILINESTRING")["Name"], raster::projection(dem_nz)), add = TRUE, lwd = 5)
+
+plot(dem_nz, col = grey.colors(128))
+plot(st_transform(st_cast(north, "MULTILINESTRING")["Name"], terra::crs(dem_nz)), add = TRUE, lwd = 5)
 ```
 
 <img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
 
 ## I thought you said *tiles*?
 
-Indeed, the `cc_location()` and `cc_elevation()` functions run
-`get_tiles()` behind the scenes.
+Indeed, here’s a function called `read_tiles()`, it shares the same
+interface as `get_tiles()`.
+
+``` r
+read_tiles()
+#> Preparing to download: 1 tiles at zoom = 0 from 
+#> https://api.mapbox.com/v4/mapbox.satellite/
+#> class       : SpatRaster 
+#> dimensions  : 256, 256, 3  (nrow, ncol, nlyr)
+#> resolution  : 156543, 156543  (x, y)
+#> extent      : -20037508, 20037508, -20037508, 20037508  (xmin, xmax, ymin, ymax)
+#> coord. ref. : +proj=merc +lon_0=0 +k=1 +x_0=0 +y_0=0 +R=6378137 +units=m +no_defs 
+#> source      : 0.jpg 
+#> colors RGB  : 1, 2, 3 
+#> names       : 0_1, 0_2, 0_3
+```
+
+Note that, the `cc_location()` and `cc_elevation()` functions no longer
+use tiles, they read directly from the internet using GDAL and are not
+related to the tile download facilities.
+
+But, they used to run `get_tiles()` behind the scenes. The separation is
+still a little unfinished, but I want ceramic to have separation of
+loading data from the internet with downloading tiles.
 
 This function and its counterparts `get_tiles_zoom()`, `get_tiles_dim()`
 and `get_tiles_buffer()` will *only download files*.
@@ -108,6 +113,48 @@ str(tile_summ$tiles)
 #>   .. .. ..$ y: chr [1:8] "y=153" "y=154" "y=155" "y=156" ...
 #>  $ zoom : num 8
 #>  - attr(*, "class")= chr "tile_grid"
+
+(tile_rect <- tiles_to_polygon(ceramic_tiles(zoom = 8)))
+#> <wk_rct[78] with CRS=EPSG:3857>
+#>  [1] [15028131 -3600490 15184674 -3443947] [15028131 -3757033 15184674 -3600490]
+#>  [3] [15028131 -3913576 15184674 -3757033] [15028131 -4070119 15184674 -3913576]
+#>  [5] [15028131 -4226662 15184674 -4070119] [15028131 -4383205 15184674 -4226662]
+#>  [7] [15028131 -4539748 15184674 -4383205] [15184674 -3600490 15341217 -3443947]
+#>  [9] [15184674 -3757033 15341217 -3600490] [15184674 -3913576 15341217 -3757033]
+#> [11] [15184674 -4070119 15341217 -3913576] [15184674 -4226662 15341217 -4070119]
+#> [13] [15184674 -4383205 15341217 -4226662] [15184674 -4539748 15341217 -4383205]
+#> [15] [15967389 -4539748 16123932 -4383205] [15967389 -4696291 16123932 -4539748]
+#> [17] [15967389 -4852834 16123932 -4696291] [16123932 -4539748 16280476 -4383205]
+#> [19] [16123932 -4696291 16280476 -4539748] [16123932 -4852834 16280476 -4696291]
+#> [21] [16123932 -5009377 16280476 -4852834] [16123932 -5165920 16280476 -5009377]
+#> [23] [16280476 -4539748 16437019 -4383205] [16280476 -4696291 16437019 -4539748]
+#> [25] [16280476 -4852834 16437019 -4696291] [16280476 -5009377 16437019 -4852834]
+#> [27] [16280476 -5165920 16437019 -5009377] [16437019 -4852834 16593562 -4696291]
+#> [29] [16437019 -5009377 16593562 -4852834] [16437019 -5165920 16593562 -5009377]
+#> [31] [19098250 -4070119 19254793 -3913576] [19098250 -4226662 19254793 -4070119]
+#> [33] [19098250 -4383205 19254793 -4226662] [19098250 -4539748 19254793 -4383205]
+#> [35] [19098250 -4696291 19254793 -4539748] [19098250 -4852834 19254793 -4696291]
+#> [37] [19098250 -5009377 19254793 -4852834] [19098250 -5165920 19254793 -5009377]
+#> [39] [19254793 -4070119 19411336 -3913576] [19254793 -4226662 19411336 -4070119]
+#> [41] [19254793 -4383205 19411336 -4226662] [19254793 -4539748 19411336 -4383205]
+#> [43] [19254793 -4696291 19411336 -4539748] [19254793 -4852834 19411336 -4696291]
+#> [45] [19254793 -5009377 19411336 -4852834] [19254793 -5165920 19411336 -5009377]
+#> [47] [19411336 -4070119 19567879 -3913576] [19411336 -4226662 19567879 -4070119]
+#> [49] [19411336 -4383205 19567879 -4226662] [19411336 -4539748 19567879 -4383205]
+#> [51] [19411336 -4696291 19567879 -4539748] [19411336 -4852834 19567879 -4696291]
+#> [53] [19411336 -5009377 19567879 -4852834] [19411336 -5165920 19567879 -5009377]
+#> [55] [19567879 -4070119 19724422 -3913576] [19567879 -4226662 19724422 -4070119]
+#> [57] [19567879 -4383205 19724422 -4226662] [19567879 -4539748 19724422 -4383205]
+#> [59] [19567879 -4696291 19724422 -4539748] [19567879 -4852834 19724422 -4696291]
+#> [61] [19567879 -5009377 19724422 -4852834] [19567879 -5165920 19724422 -5009377]
+#> [63] [19724422 -4070119 19880965 -3913576] [19724422 -4226662 19880965 -4070119]
+#> [65] [19724422 -4383205 19880965 -4226662] [19724422 -4539748 19880965 -4383205]
+#> [67] [19724422 -4696291 19880965 -4539748] [19724422 -4852834 19880965 -4696291]
+#> [69] [19724422 -5009377 19880965 -4852834] [19724422 -5165920 19880965 -5009377]
+#> [71] [19880965 -4070119 20037508 -3913576] [19880965 -4226662 20037508 -4070119]
+#> [73] [19880965 -4383205 20037508 -4226662] [19880965 -4539748 20037508 -4383205]
+#> [75] [19880965 -4696291 20037508 -4539748] [19880965 -4852834 20037508 -4696291]
+#> [77] [19880965 -5009377 20037508 -4852834] [19880965 -5165920 20037508 -5009377]
 ```
 
 This is really for expert use when you want to control the downloaded
@@ -117,59 +164,12 @@ tile files yourself directly.
 
 The default map provider is [Mapbox](https://www.mapbox.com/), but
 ceramic is written for general usage and also provides access to the
-[joerd AWS tiles](https://github.com/tilezen/joerd/) via the `type =
-"elevation-tiles-prod"` argument.
+[joerd AWS tiles](https://github.com/tilezen/joerd/) via the
+`type = "elevation-tiles-prod"` argument.
 
 ``` r
 pt <- cbind(175.6082, -37.994)
-nz_z12 <- cc_location(pt, zoom = 12, type = "elevation-tiles-prod")
-#> Preparing to download: 4 tiles at zoom = 12 from 
-#> https://s3.amazonaws.com/elevation-tiles-prod/geotiff/
-```
-
-Use `max_tiles` or `zoom` to increase or decrease resolution.
-
-``` r
-im1 <- cc_location(im_nz, debug = TRUE)
-#> Preparing to download: 12 tiles at zoom = 6 from 
-#> https://api.mapbox.com/v4/mapbox.satellite/
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/61/38.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/62/38.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/63/38.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/61/39.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/62/39.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/63/39.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/61/40.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/62/40.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/63/40.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/61/41.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/62/41.jpg"
-#> [1] "/perm_storage/home/mdsumner/.cache/.ceramic/api.mapbox.com/v4/mapbox.satellite/6/63/41.jpg"
-im2 <- cc_location(im_nz, zoom = 7)
-#> Preparing to download: 35 tiles at zoom = 7 from 
-#> https://api.mapbox.com/v4/mapbox.satellite/
-
-im1
-#> class      : RasterBrick 
-#> dimensions : 736, 548, 403328, 3  (nrow, ncol, ncell, nlayers)
-#> resolution : 2445.985, 2445.985  (x, y)
-#> extent     : 18533228, 19873627, -5845904, -4045659  (xmin, xmax, ymin, ymax)
-#> crs        : +proj=merc +a=6378137 +b=6378137 
-#> source     : memory
-#> names      : layer.1, layer.2, layer.3 
-#> min values :       0,       4,       0 
-#> max values :     255,     255,     255
-
-im2
-#> class      : RasterBrick 
-#> dimensions : 1470, 1095, 1609650, 3  (nrow, ncol, ncell, nlayers)
-#> resolution : 1222.992, 1222.992  (x, y)
-#> extent     : 18534451, 19873627, -5844681, -4046882  (xmin, xmax, ymin, ymax)
-#> crs        : +proj=merc +a=6378137 +b=6378137 
-#> source     : memory
-#> names      : layer.1, layer.2, layer.3 
-#> min values :       0,       5,       0 
-#> max values :     255,     255,     255
+nz_z12 <- cc_location(pt, buffer  = 100000,  type = "elevation-tiles-prod")
 ```
 
 ## Installation
@@ -199,156 +199,49 @@ This complete example gets tiled imagery that we can use as real data.
 
 The code here
 
-  - generates a bounding box in longitude-latitude
-  - uses [slippymath](https://CRAN.r-project.org/package=slippymath) to
-    find sensible tiles for the region
-  - downloads them to a local cache
-  - georeferences them and merges the tiles into a sensible raster
-    object
+- generates a bounding box in longitude-latitude
+- reads the raster data using GDAL
 
-<!-- end list -->
+then we look at the actual tiles involved,
+
+- uses [slippymath](https://CRAN.r-project.org/package=slippymath) to
+  find sensible tiles for the region
+- downloads them to a local cache
+- summarizes the tiles as a spatial (wk) object
 
 ``` r
 library(ceramic)
 ## a point in longlat, and a buffer with in metres
 pt <- cbind(136, -34)
 im <- cc_location(pt, buffer = c(1e6, 5e5), type = "mapbox.satellite")
-#> Preparing to download: 12 tiles at zoom = 6 from 
-#> https://api.mapbox.com/v4/mapbox.satellite/
-library(raster)
-#> Loading required package: sp
+op <- par(bg = "black")
 plotRGB(im)
 
-## get the matching tiles (zoom is magic here, it's all wrapped - needs thought)
+## get the approximately matching tiles (zoom is magic here, it's all wrapped - needs thought)
 
-tiles <- ceramic_tiles(zoom = 6, type = "mapbox.satellite")
-library(sf)
-plot(st_geometry(ceramic:::tiles_to_polygon(tiles)), add = TRUE)
+tileset <- get_tiles(pt, buffer = c(1e6, 5e5))
+#> Preparing to download: 28 tiles at zoom = 7 from 
+#> https://api.mapbox.com/v4/mapbox.satellite/
+tiles <- ceramic_tiles(zoom = tileset$tiles$zoom, type = "mapbox.satellite")
+plot(tiles_to_polygon(tiles), add = TRUE, border = "white")
+
+
+
 middle <- function(x, y) {
   x + (y - x)/2
 }
 text(middle(tiles$xmin, tiles$xmax), middle(tiles$ymin, tiles$ymax), lab = sprintf("[%i,%i]", tiles$tile_x, tiles$tile_y), 
-     col = "firebrick")
+     col = "yellow")
 ```
 
-<img src="man/figures/README-example-1.png" width="100%" />
-
-## Local caching of tiles
-
-A key feature of ceramic is *caching*, all data is downloaded in a
-systematic way that is suitable for later re-use. Many tools for imagery
-services treat the imagery as transient, but here we take control over
-the raw data itself. All file names match exactly the address URL of the
-original source data.
-
-There is a helper function to find existing
-tiles.
+<img src="man/figures/README-example01-1.png" width="100%" />
 
 ``` r
-aa <- cc_location(loc = cbind(0, 0), buffer = 330000, type = "mapbox.satellite")
-#> Preparing to download: 16 tiles at zoom = 7 from 
-#> https://api.mapbox.com/v4/mapbox.satellite/
-ceramic_tiles(zoom = 7, type = "mapbox.satellite")
-#> # A tibble: 76 x 11
-#>    tile_x tile_y  zoom type  version source fullname     xmin   xmax
-#>     <int>  <int> <int> <chr> <chr>   <chr>  <fs::path>  <dbl>  <dbl>
-#>  1    113     79     7 mapb… v4      api.m… /perm_sto… 1.53e7 1.57e7
-#>  2    113     80     7 mapb… v4      api.m… /perm_sto… 1.53e7 1.57e7
-#>  3    113     81     7 mapb… v4      api.m… /perm_sto… 1.53e7 1.57e7
-#>  4    114     79     7 mapb… v4      api.m… /perm_sto… 1.57e7 1.60e7
-#>  5    114     80     7 mapb… v4      api.m… /perm_sto… 1.57e7 1.60e7
-#>  6    114     81     7 mapb… v4      api.m… /perm_sto… 1.57e7 1.60e7
-#>  7    115     79     7 mapb… v4      api.m… /perm_sto… 1.60e7 1.63e7
-#>  8    115     80     7 mapb… v4      api.m… /perm_sto… 1.60e7 1.63e7
-#>  9    115     81     7 mapb… v4      api.m… /perm_sto… 1.60e7 1.63e7
-#> 10    116     79     7 mapb… v4      api.m… /perm_sto… 1.63e7 1.66e7
-#> # … with 66 more rows, and 2 more variables: ymin <dbl>, ymax <dbl>
+     
+par(op)
 ```
 
-and every row has the extent values useable directly by raster:
-
-``` r
-ceramic_tiles(zoom = 7, type = "mapbox.satellite") %>% 
-  dplyr::slice(1:5) %>% 
-   purrr::transpose()  %>% 
-  purrr::map(~raster::extent(unlist(.x[c("xmin", "xmax", "ymin", "ymax")])))
-#> [[1]]
-#> class      : Extent 
-#> xmin       : 15341217 
-#> xmax       : 15654303 
-#> ymin       : -5009377 
-#> ymax       : -4696291 
-#> 
-#> [[2]]
-#> class      : Extent 
-#> xmin       : 15341217 
-#> xmax       : 15654303 
-#> ymin       : -5322463 
-#> ymax       : -5009377 
-#> 
-#> [[3]]
-#> class      : Extent 
-#> xmin       : 15341217 
-#> xmax       : 15654303 
-#> ymin       : -5635549 
-#> ymax       : -5322463 
-#> 
-#> [[4]]
-#> class      : Extent 
-#> xmin       : 15654303 
-#> xmax       : 15967389 
-#> ymin       : -5009377 
-#> ymax       : -4696291 
-#> 
-#> [[5]]
-#> class      : Extent 
-#> xmin       : 15654303 
-#> xmax       : 15967389 
-#> ymin       : -5322463 
-#> ymax       : -5009377
-```
-
-Another example
-
-``` r
-my_bbox <-
-  st_bbox(c(xmin = 144,
-            xmax = 147.99,
-            ymin = -44.12,
-            ymax = -40),
-          crs = st_crs("+proj=longlat +ellps=WGS84"))
-im <- cc_location(cbind(145.5, -42.2), buffer = 5e5)
-#> Preparing to download: 6 tiles at zoom = 6 from 
-#> https://api.mapbox.com/v4/mapbox.satellite/
-plotRGB(im)
-plot(st_transform(ozmaps::abs_lga$geometry, projection(im)), add = TRUE, lwd = 2, border = "white")
-```
-
-<img src="man/figures/README-tasmania-1.png" width="100%" />
-
-An internal function sets up a plot of tiles at particular zoom levels.
-
-``` r
-ceramic::plot_tiles(ceramic_tiles(zoom = c(7, 9)))
-```
-
-![tile plot](man/figures/README-tile-plot.png)
-
-And we can add the tiles to an existing plot.
-
-``` r
-plotRGB(im)
-ceramic::plot_tiles(ceramic_tiles(zoom = 7), add = TRUE)
-```
-
-![tile add plot](man/figures/README-tile-add-plot.png)
-
-# Future improvements
-
-See the [Issue tab](https://github.com/hypertidy/ceramic/issues/) and
-please make suggestions and give feedback\!
-
------
+------------------------------------------------------------------------
 
 Please note that the ‘ceramic’ project is released with a [Contributor
 Code of

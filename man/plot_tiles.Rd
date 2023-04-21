@@ -5,8 +5,15 @@
 \alias{tiles_to_polygon}
 \title{Plot slippy map tiles}
 \usage{
-plot_tiles(x, ..., add = FALSE, label = TRUE, cex = 0.6,
-  add_coast = TRUE, include_zoom = TRUE)
+plot_tiles(
+  x,
+  ...,
+  add = FALSE,
+  label = TRUE,
+  cex = 0.6,
+  add_coast = TRUE,
+  include_zoom = TRUE
+)
 
 tiles_to_polygon(x)
 }
@@ -27,7 +34,7 @@ tiles_to_polygon(x)
 }
 \value{
 \code{\link[=plot_tiles]{plot_tiles()}} is called for its side-effect, a plot, and returns \code{NULL} invisibly.
-\link{tiles_to_polygon} returns a simple features polygon data frame.
+\link{tiles_to_polygon} returns a wk rct vector
 }
 \description{
 Create a new plot of tile rectangles, or add to an existing plot.

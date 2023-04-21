@@ -1,14 +1,12 @@
+# This file is part of the standard setup for testthat.
+# It is recommended that you do not modify it.
+#
+# Where should you do additional test configuration?
+# Learn more about the roles of various files in:
+# * https://r-pkgs.org/tests.html
+# * https://testthat.r-lib.org/reference/test_package.html#special-files
+
 library(testthat)
 library(ceramic)
 
-##   https://account.mapbox.com/access-tokens/
-ceramic_key <- "pk.eyJ1IjoibWRzdW1uZXIiLCJhIjoiY2p0bDI1aGY1MTRiNDQ0bWR2djh4dzgxOSJ9.zPM71aZwRWHc9U5kvDQDIA"
-if (identical(Sys.getenv("APPVEYOR"), "True")) {
-  Sys.setenv(MAPBOX_API_KEY=ceramic_key)
-}
-if (identical(Sys.getenv("TRAVIS"), "true")) {
-  Sys.setenv(MAPBOX_API_KEY=ceramic_key)
-}
-
 test_check("ceramic")
-

@@ -1,20 +1,20 @@
-context("test-tiles")
 
-test_that("creating virtual tiles works", {
-
+test_that("tiles works", {
   skip_on_cran()
-
-  z0 <- virtual_tiles() %>% expect_s3_class("tile_grid")
-  expect_true(nrow(z0$tiles) == 1L)
-  z5 <- virtual_tiles(zoom = 5) %>% expect_s3_class("tile_grid")
-  expect_true(nrow(z5$tiles) == 1024L)
-
-  ze <- virtual_tiles(zoom = 5, extent = raster::extent(-1e5, 1e4, -1, 1e6)) %>% expect_s3_class("tile_grid")
-  expect_true(nrow(ze$tiles) == 416L)
+  skip_if(is.null(get_api_key()))
+  
+  expect_message(rgb <- read_tiles(cbind(147, -42), buffer = 5000, max_tiles = 1, type = "mapbox.terrain-rgb"))
+  expect_silent(rng <- range(values(unpack_rgb(rgb))))
+  expect_true(rng[1] < 0)
+  expect_true(rng[2] > 1000)
+  
+  
+  expect_message(get_tiles_zoom(zoom = 1))
+  
+  expect_message(get_tiles_dim(dim = c(256, 256)))
+  expect_message(get_tiles_buffer(cbind(147, -42), 2000))
+  
+    expect_s3_class(tiles <- ceramic_tiles(zoom = 1), "tbl_df")
+  	
+  expect_silent(plot_tiles(tiles, add_coast = F))
 })
-
-
-# test_that("creating vector tiles works", {
-#   #cc_location(cbind(0, 0), buffer = 1e6)
-#  #ct <- ceramic_tiles(zoom = 6)
-# })

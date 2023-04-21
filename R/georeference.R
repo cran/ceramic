@@ -2,11 +2,10 @@
 #' @importFrom dplyr filter
 spherical_mercator <- function(provider) {
   #MAXEXTENT is the bounds between [-180, 180] and [-85.0511, 85.0511]
-  tibble::tibble(provider = "mapbox",
+  dplyr::filter(tibble::tibble(provider = "mapbox",
                  MAXEXTENT = 20037508.342789244,
                  A = 6378137.0, B = 6378137.0,
-                 crs = glue::glue("+proj=merc +a={A} +b={A}")) %>%
-    dplyr::filter(provider == provider)
+                 crs = glue::glue("+proj=merc +a={A} +b={A}")),  provider == provider)
 }
 #' Tile extent
 #'
@@ -53,6 +52,7 @@ mercator_tile_extent <- function(tile_x, tile_y, zoom, tile_size = 256) {
   stats::setNames(c(xlim, ylim), c("xmin", "xmax", "ymin", "ymax"))
 }
 
+#mercator_tile_extent0
 add_extent <- function(x) {
   ## assert tibble with tile_x, tile_y, zoom
   l <- purrr::map(purrr::transpose(x), ~mercator_tile_extent(.x$tile_x, .x$tile_y, .x$zoom))
@@ -75,7 +75,7 @@ add_extent <- function(x) {
 #' @param include_zoom include zoom level with text label if drawn?
 #' @export
 #' @return [plot_tiles()] is called for its side-effect, a plot, and returns `NULL` invisibly.
-#' [tiles_to_polygon] returns a simple features polygon data frame.
+#' [tiles_to_polygon] returns a wk rct vector
 #' @importFrom sp plot
 #' @importFrom graphics rect text
 #' @aliases tiles_to_polygon
@@ -106,13 +106,6 @@ plot_tiles <- function(x, ..., add = FALSE, label = TRUE, cex = 0.6, add_coast =
 #' @name plot_tiles
 #' @export
 tiles_to_polygon <- function(x) {
-  spex::polygonize(tiles_to_raster(x))
+  wk::rct(x$xmin, x$ymin, x$xmax, x$ymax, crs = "EPSG:3857")
 }
-tiles_to_raster <- function(x) {
-  ex <- raster::extent(min(x$xmin), max(x$xmax), min(x$ymin), max(x$ymax))
-  pts <- x[c("tile_x", "tile_y")] %>% dplyr::transmute(x = tile_x - min(tile_x), y = max(tile_y) - tile_y) %>% dplyr::distinct()
-  r <- raster::setExtent(raster::rasterFromXYZ(pts), ex)
-  cells <- raster::cellFromRowCol(r, pts$y + 1, pts$x + 1)
-  r[cells] <- cells
-  r
-}
+

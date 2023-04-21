@@ -11,35 +11,93 @@
 \alias{cc_kingston}
 \title{Obtain tiled imagery by location query}
 \usage{
-cc_location(loc = NULL, buffer = 5000, type = "mapbox.satellite",
-  ..., zoom = NULL, max_tiles = NULL, debug = FALSE)
+cc_location(
+  loc = NULL,
+  buffer = 5000,
+  type = "mapbox.satellite",
+  ...,
+  zoom = NULL,
+  max_tiles = NULL,
+  debug = FALSE,
+  dimension = NULL
+)
 
-cc_macquarie(loc = c(158.93835, -54.49871), buffer = 5000,
-  type = "mapbox.outdoors", ..., zoom = NULL, max_tiles = NULL,
-  debug = FALSE)
+cc_macquarie(
+  loc = c(158.93835, -54.49871),
+  buffer = 5000,
+  type = "mapbox.satellite",
+  ...,
+  zoom = NULL,
+  max_tiles = NULL,
+  debug = FALSE,
+  dimension = NULL
+)
 
-cc_davis(loc = c(77 + 58/60 + 3/3600, -(68 + 34/60 + 36/3600)),
-  buffer = 5000, type = "mapbox.outdoors", ..., zoom = NULL,
-  max_tiles = NULL, debug = FALSE)
+cc_davis(
+  loc = c(77 + 58/60 + 3/3600, -(68 + 34/60 + 36/3600)),
+  buffer = 5000,
+  type = "mapbox.satellite",
+  ...,
+  zoom = NULL,
+  max_tiles = NULL,
+  debug = FALSE,
+  dimension = NULL
+)
 
-cc_mawson(loc = c(62 + 52/60 + 27/3600, -(67 + 36/60 + 12/3600)),
-  buffer = 5000, type = "mapbox.outdoors", ..., zoom = NULL,
-  max_tiles = NULL, debug = FALSE)
+cc_mawson(
+  loc = c(62 + 52/60 + 27/3600, -(67 + 36/60 + 12/3600)),
+  buffer = 5000,
+  type = "mapbox.satellite",
+  ...,
+  zoom = NULL,
+  max_tiles = NULL,
+  debug = FALSE,
+  dimension = NULL
+)
 
-cc_casey(loc = cbind(110 + 31/60 + 36/3600, -(66 + 16/60 + 57/3600)),
-  buffer = 5000, type = "mapbox.outdoors", ..., zoom = NULL,
-  max_tiles = NULL, debug = FALSE)
+cc_casey(
+  loc = cbind(110 + 31/60 + 36/3600, -(66 + 16/60 + 57/3600)),
+  buffer = 5000,
+  type = "mapbox.satellite",
+  ...,
+  zoom = NULL,
+  max_tiles = NULL,
+  debug = FALSE,
+  dimension = NULL
+)
 
-cc_heard(loc = c(73 + 30/60 + 30/3600, -(53 + 0 + 0/3600)),
-  buffer = 5000, type = "mapbox.outdoors", ..., zoom = NULL,
-  max_tiles = NULL, debug = FALSE)
+cc_heard(
+  loc = c(73 + 30/60 + 30/3600, -(53 + 0 + 0/3600)),
+  buffer = 5000,
+  type = "mapbox.satellite",
+  ...,
+  zoom = NULL,
+  max_tiles = NULL,
+  debug = FALSE,
+  dimension = NULL
+)
 
-cc_kingston(loc = c(147.70837, -42.98682), buffer = 5000,
-  type = "mapbox.outdoors", ..., zoom = NULL, max_tiles = NULL,
-  debug = FALSE)
+cc_kingston(
+  loc = c(147.2901, -42.98682),
+  buffer = 5000,
+  type = "mapbox.satellite",
+  ...,
+  zoom = NULL,
+  max_tiles = NULL,
+  debug = FALSE,
+  dimension = NULL
+)
 
-cc_elevation(loc = NULL, buffer = 5000, ..., zoom = NULL,
-  max_tiles = NULL, debug = FALSE)
+cc_elevation(
+  loc = NULL,
+  buffer = 5000,
+  type = NULL,
+  ...,
+  zoom = NULL,
+  max_tiles = NULL,
+  debug = FALSE,
+  dimension = NULL
+)
 }
 \arguments{
 \item{loc}{a longitude, latitude pair of coordinates, or a spatial object}
@@ -48,16 +106,18 @@ cc_elevation(loc = NULL, buffer = 5000, ..., zoom = NULL,
 
 \item{type}{character string of provider imagery type (see Details)}
 
-\item{...}{arguments passed to internal function, specifically \code{base_url} (see Details)}
+\item{...}{deprecated arguments that \emph{used_to_be} passed to internal function now ignored since v 0.8.0 (see \code{\link[=get_tiles]{get_tiles()}})}
 
-\item{zoom}{desired zoom for tiles, use with caution - if \code{NULL} is chosen automatically}
+\item{zoom}{deprecated (use \code{dimension})}
 
-\item{max_tiles}{maximum number of tiles to be read into memory - if \code{NULL} is set by zoom constraints}
+\item{max_tiles}{deprecated}
 
-\item{debug}{optionally print out files that will be used}
+\item{debug}{deprecated}
+
+\item{dimension}{one or two numbers, used to determine the number of pixels width, height - set one to zero to let GDAL figure it out, or leave as NULL to get something suitable}
 }
 \value{
-A \code{\link[raster:brick]{raster::brick()}} object, either 'RasterBrick' with three layers (Red, Green, Blue) or with
+A \code{\link[terra:rast]{terra::rast()}} object, either with three layers (Red, Green, Blue) or with
 a single layer in the case of \code{\link[=cc_elevation]{cc_elevation()}}.
 }
 \description{
@@ -71,20 +131,13 @@ around the raw longitude and latitude in metres. If \code{loc} has an extent, th
 \code{cc_elevation} does extra work to unpack the DEM tiles from the RGB format.
 
 Available types are 'elevation-tiles-prod' for AWS elevation tiles, and 'mapbox.satellite',
-'mapbox.outdoors', 'mapbox.terrain-rgb' or any string accepted by Mapbox services.
+and 'mapbox.terrain-rgb'.
 
 Note that arguments \code{max_tiles} and \code{zoom} are mutually exclusive. One or both must be \code{NULL}. If
 both are NULL then \code{max_tiles = 16L}.
-}
-\section{Custom styles}{
-
-
-Custom Mapbox styles may be specified with the argument \code{base_url} in the form:
-\code{"https://api.mapbox.com/styles/v1/mdsumner/cjs6yn9hu0coo1fqhdqgw3o18/tiles/512/{zoom}/{x}/{y}"}
 
 Currently must be considered in-development.
 }
-
 \examples{
 if (!is.null(get_api_key())) {
 
@@ -92,11 +145,10 @@ if (!is.null(get_api_key())) {
 
  ## this source does not need the Mapbox API, but we won't run the example unless it's set
  dem <- cc_kingston(buffer = 1e4, type = "elevation-tiles-prod")
- raster::plot(dem, col = grey(seq(0, 1, length = 94)))
+ terra::plot(dem, col = grey(seq(0, 1, length = 94)))
 
  ## Mapbox imagery
  im <- cc_macquarie()
- library(raster)
  plotRGB(im)
  }
 }

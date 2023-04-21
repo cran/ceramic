@@ -11,8 +11,7 @@ get_tiles_zoom(x, zoom = 0, ..., format = "png")
 
 get_tiles_dim(x, dim = c(512, 512), ..., format = "png")
 
-get_tiles_buffer(x, buffer = NULL, ..., max_tiles = 9,
-  format = "png")
+get_tiles_buffer(x, buffer = NULL, ..., max_tiles = 9, format = "png")
 }
 \arguments{
 \item{x}{a spatial object with an extent}
@@ -31,7 +30,7 @@ get_tiles_buffer(x, buffer = NULL, ..., max_tiles = 9,
 }
 \value{
 A list with files downloaded in character vector, a data frame of the tile indices,
-the zoom level used and the extent in \link[raster:extent]{raster::extent} form.
+the zoom level used and the extent in xmin,xmax,ymin,ymax form.
 }
 \description{
 Get tiles by zoom, by overall dimension, or by buffer on a single point.
@@ -47,12 +46,12 @@ Each function expects an extent in longitude latitude or a spatial object with e
 }
 \examples{
 if (!is.null(get_api_key())) {
- ex <- raster::extent(146, 147, -43, -42)
- tile_infoz <- get_tiles_zoom(ex, type = "mapbox.outdoors", zoom = 1)
+ ex <- ext(146, 147, -43, -42)
+ tile_infoz <- get_tiles_zoom(ex,  zoom = 1)
 
- tile_infod <- get_tiles_dim(ex, type = "mapbox.outdoors", dim = c(256, 256))
+ tile_infod <- get_tiles_dim(ex,  dim = c(256, 256))
 
- tile_infob <- get_tiles_buffer(cbind(146.5, -42.5), buffer = 5000, type = "mapbox.outdoors")
+ tile_infob <- get_tiles_buffer(cbind(146.5, -42.5), buffer = 5000)
 }
 }
 \seealso{
