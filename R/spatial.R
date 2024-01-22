@@ -11,7 +11,7 @@ is_spatial <- function(x) {
   inherits(x, .spatial_classes())
 }
 
-
+#' @importFrom terra is.lonlat
 #' @importFrom wk wk_crs
 .crs_crs <- function(x) {
   crs <- crsmeta::crs_wkt(x)
@@ -33,14 +33,17 @@ is_spatial <- function(x) {
     }
   }
   if (is.na(crs) && (inherits(x, "SpatRaster") || inherits(x, "SpatVector"))) {
-    crs <- try(x@ptr$get_crs("wkt"), silent = TRUE)
-    if (inherits(crs, "try-error")) {
-      crs <- NA_character_
-    }
+    #crs <- try(x@ptr$get_crs("wkt"), silent = TRUE)
+    crs <- terra::crs(x)
+	## This should never happen?
+	#if (inherits(crs, "try-error")) {
+    #  crs <- NA_character_
+    #}
     
     if (is.na(crs)) {
-      if (x@ptr$isLonLat()) {
-        crs <- "+proj=longlat +datum=WGS84"
+#      if (x@ptr$isLonLat()) {
+	  if (terra::is.lonlat(x, perhaps=FALSE, warn=FALSE)) {
+		crs <- "+proj=longlat +datum=WGS84"
       }
     }
   }

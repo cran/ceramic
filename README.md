@@ -2,6 +2,8 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/ceramic)](https://CRAN.R-project.org/package=ceramic)
 [![R-CMD-check](https://github.com/hypertidy/ceramic/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hypertidy/ceramic/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
@@ -13,14 +15,14 @@ define the region of interest.
 ``` r
 library(ceramic)
 #> Loading required package: terra
-#> terra 1.7.23
+#> terra 1.7.65
 roi <- ext(100, 160, -50, 10)
 im <- cc_location(roi)
 
 plotRGB(im)
 ```
 
-<img src="man/figures/README-unnamed-chunk-1-1.png" width="100%" />
+<img src="man/figures/README-extent1-1.png" width="100%" />
 
 The terra package is always loaded by ceramic, so we can assume the use
 of its functions, ceramic accepts a wider range of inputs than terra
@@ -62,7 +64,7 @@ plot(dem_nz, col = grey.colors(128))
 plot(st_transform(st_cast(north, "MULTILINESTRING")["Name"], terra::crs(dem_nz)), add = TRUE, lwd = 5)
 ```
 
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-1-1.png" width="100%" />
 
 ## I thought you said *tiles*?
 
@@ -240,6 +242,67 @@ text(middle(tiles$xmin, tiles$xmax), middle(tiles$ymin, tiles$ymax), lab = sprin
      
 par(op)
 ```
+
+## Tasmap maps
+
+``` r
+library(ceramic)
+library(terra)
+template <- rast(ext(527358, 527880, 5252204, 5252704), res = .3, crs = "EPSG:32755")
+ortho <- cc_location(template, type = "tasmap_orthophoto")
+
+plot(ortho)
+```
+
+<img src="man/figures/README-tasmap-1.png" width="100%" />
+
+``` r
+
+plot(cc_location(template, type = "tasmap_street"))
+```
+
+<img src="man/figures/README-tasmap-2.png" width="100%" />
+
+``` r
+
+plot(cc_location(template, type = "tasmap_tasmapraster"))
+```
+
+<img src="man/figures/README-tasmap-3.png" width="100%" />
+
+``` r
+
+plot(cc_location(template, type = "tasmap_hillshade"))
+```
+
+<img src="man/figures/README-tasmap-4.png" width="100%" />
+
+``` r
+
+plot(cc_location(template, type = "tasmap_hillshadegrey"))
+```
+
+<img src="man/figures/README-tasmap-5.png" width="100%" />
+
+``` r
+plot(cc_location(template, type = "tasmap_esgismapbookpublic"))  ## nope
+```
+
+<img src="man/figures/README-tasmap-6.png" width="100%" />
+
+``` r
+plot(cc_location(template, type = "tasmap_topographic"))
+```
+
+<img src="man/figures/README-tasmap-7.png" width="100%" />
+
+``` r
+
+
+plot(cc_location(template, type = "tasmap_tasmap25k"))  ## also 100k, 250k, 500k
+```
+
+<img src="man/figures/README-tasmap-8.png" width="100%" />
 
 ------------------------------------------------------------------------
 
